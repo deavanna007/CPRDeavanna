@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ប្រព័ន្ធគណនាតម្លៃស្រូវ - Rice Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Kantumruy Pro', sans-serif; background-color: #f3f4f6; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
+        <!-- Header -->
+        <div class="bg-green-600 p-6 text-white text-center">
+            <h1 class="text-2xl md:text-3xl font-bold">ប្រព័ន្ធគ្រប់គ្រង និងគណនាតម្លៃស្រូវ</h1>
+            <p class="opacity-90 mt-2">ងាយស្រួល បញ្ចូលទិន្នន័យបានលឿន និងច្បាស់លាស់</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+            
+            <!-- Section: Input Data -->
+            <div class="space-y-4">
+                <div class="bg-green-50 p-4 rounded-2xl border border-green-100">
+                    <label class="block text-sm font-bold text-green-800 mb-2">កំណត់តម្លៃស្រូវ (១ គីឡូក្រាម)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="pricePerKg" placeholder="ឧទាហរណ៍៖ ១២០០" 
+                               class="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none transition-all">
+                        <span class="flex items-center font-bold text-green-700">៛/kg</span>
+                    </div>
+                    <label class="block text-sm font-bold text-green-800 mt-4 mb-2">អត្រាប្តូរប្រាក់ (១$ = ? ៛)</label>
+                    <input type="number" id="exchangeRate" value="4100" 
+                           class="w-full px-4 py-3 rounded-xl border-2 border-green-200 focus:border-green-500 focus:outline-none">
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                    <label class="block text-sm font-bold text-blue-800 mb-2">បញ្ចូលទម្ងន់ស្រូវ (គិតជាបាវ)</label>
+                    <div class="flex gap-2">
+                        <input type="number" id="inputKg" placeholder="បញ្ចូលចំនួនគីឡូក្នុងមួយបាវ" 
+                               class="w-full px-4 py-3 rounded-xl border-2 border-blue-200 focus:border-blue-500 focus:outline-none transition-all">
+                        <button onclick="addWeight()" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all active:scale-95">
+                            បញ្ចូល
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Statistics -->
+            <div class="grid grid-cols-1 gap-4 text-center">
+                <div class="bg-gray-800 text-white p-6 rounded-2xl shadow-lg">
+                    <p class="text-sm opacity-80">ទម្ងន់សរុប (Total Weight)</p>
+                    <h2 class="text-4xl font-bold mt-1"><span id="totalKg">0</span> <small class="text-lg">kg</small></h2>
+                </div>
+                <div class="bg-orange-500 text-white p-6 rounded-2xl shadow-lg">
+                    <p class="text-sm opacity-80">តម្លៃសរុបជាប្រាក់រៀល (Total Riels)</p>
+                    <h2 class="text-3xl font-bold mt-1"><span id="totalRiel">0</span> <small class="text-lg">៛</small></h2>
+                </div>
+                <div class="bg-indigo-600 text-white p-6 rounded-2xl shadow-lg">
+                    <p class="text-sm opacity-80">តម្លៃសរុបជាដុល្លារ (Total Dollars)</p>
+                    <h2 class="text-3xl font-bold mt-1"><small class="text-lg">$</small> <span id="totalDollar">0.00</span></h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="p-6 border-t border-gray-100">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-gray-700 text-lg">បញ្ជីបាវស្រូវដែលបានបញ្ចូល</h3>
+                <button onclick="clearAll()" class="text-red-500 hover:text-red-700 text-sm font-bold">លុបទាំងអស់</button>
+            </div>
+            <div class="max-h-60 overflow-y-auto rounded-xl border border-gray-200">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-gray-600">
+                        <tr>
+                            <th class="p-3 text-sm">លេខរៀង</th>
+                            <th class="p-3 text-sm">ទម្ងន់ (kg)</th>
+                            <th class="p-3 text-sm text-right">សកម្មភាព</th>
+                        </tr>
+                    </thead>
+                    <tbody id="listTable" class="divide-y divide-gray-100">
+                        <!-- Data will show here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let weights = [];
+
+        function addWeight() {
+            const input = document.getElementById('inputKg');
+            const kg = parseFloat(input.value);
+
+            if (isNaN(kg) || kg <= 0) {
+                alert("សូមបញ្ចូលចំនួនគីឡូឱ្យបានត្រឹមត្រូវ!");
+                return;
+            }
+
+            weights.push(kg);
+            input.value = '';
+            input.focus();
+            updateDashboard();
+        }
+
+        function updateDashboard() {
+            const pricePerKg = parseFloat(document.getElementById('pricePerKg').value) || 0;
+            const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 4100;
+            
+            const totalKg = weights.reduce((a, b) => a + b, 0);
+            const totalRiel = totalKg * pricePerKg;
+            const totalDollar = totalRiel / exchangeRate;
+
+            // Update UI
+            document.getElementById('totalKg').innerText = totalKg.toLocaleString();
+            document.getElementById('totalRiel').innerText = totalRiel.toLocaleString();
+            document.getElementById('totalDollar').innerText = totalDollar.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Update Table
+            const tableBody = document.getElementById('listTable');
+            tableBody.innerHTML = '';
+            weights.forEach((w, index) => {
+                tableBody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="p-3 text-gray-600">បាវទី ${index + 1}</td>
+                        <td class="p-3 font-bold">${w} kg</td>
+                        <td class="p-3 text-right">
+                            <button onclick="removeWeight(${index})" class="text-red-400 hover:text-red-600">លុប</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function removeWeight(index) {
+            weights.splice(index, 1);
+            updateDashboard();
+        }
+
+        function clearAll() {
+            if(confirm("តើអ្នកពិតជាចង់លុបទិន្នន័យទាំងអស់មែនទេ?")) {
+                weights = [];
+                updateDashboard();
+            }
+        }
+    </script>
+</body>
+</html>
